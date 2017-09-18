@@ -1,2 +1,4 @@
-# vagabonds
+Vagabonds
+===
+
 Useful Vagrantfiles
