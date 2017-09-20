@@ -1,36 +1,25 @@
-# Simplest possible Ubuntu 12.04 box with a GUI 
 Vagrant.configure("2") do |config|
-  
-  config.vm.box = "hashicorp/precise64"
+  config.vm.box = "ubuntu/trusty64"
 
   config.vm.provider "virtualbox" do |vb|
-      # Don't boot with headless mode
       vb.gui = true
-  
-      # Set a name that you can remember
-      vb.name = "ubuntu_xfce"
-      # Set 1024M of RAM
+      vb.name = "xfce-ubuntu"
       vb.memory = 1024
-	  
-      # And one processor
       vb.cpus = 1
   end
- 
-  # This next bit fixes the 'stdin is not a tty' error when shell provisioning Ubuntu boxes
-  config.vm.provision :shell,
-    #if there a line that only consists of 'mesg n' in /root/.profile, replace it with 'tty -s && mesg n'
-    :inline => "(grep -q -E '^mesg n$' /root/.profile && sed -i 's/^mesg n$/tty -s \\&\\& mesg n/g' /root/.profile && echo 'Ignore the previous error about stdin not being a tty. Fixing it now...') || exit 0;"	
-	
-  # update definitions
-  config.vm.provision "shell", inline: "apt-get update"	
-  # just the basic desktop environment. if you want the addons, you can install them later
-  config.vm.provision "shell", inline: "apt-get install xubuntu-desktop --no-install-recommends --assume-yes"
-  
-  # otherwise icons don't get loaded
-  config.vm.provision "shell", inline: "apt-get install xubuntu-icon-theme --assume-yes"
-  
-  #activate logon with gui and reboot
-  config.vm.provision "shell", inline: "dpkg-reconfigure lightdm"
-  config.vm.provision "shell", inline: "reboot"
 
+  config.vm.provision "shell", inline: <<-SHELL
+    (grep -q -E '^mesg n$' /root/.profile && sed -i 's/^mesg n$/tty -s \\&\\& mesg n/g' /root/.profile && echo 'Ignore the previous error about stdin not being a tty. Fixing it now...') || exit 0
+    apt-get install python-software-properties --assume-yes
+    add-apt-repository ppa:openjdk-r/ppa -y
+    apt-get update
+    apt-get install xubuntu-desktop --no-install-recommends --assume-yes
+    apt-get install xubuntu-icon-theme --assume-yes
+    apt-get install openjdk-8-jdk --assume-yes
+    apt-get install git --assume-yes
+    apt-get install firefox --assume-yes
+    apt-get install nload --assume-yes
+    dpkg-reconfigure lightdm
+    reboot
+  SHELL
 end
