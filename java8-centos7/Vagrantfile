@@ -14,8 +14,8 @@ Vagrant.configure("2") do |config|
   config.ssh.insert_key = false
   config.vm.box_check_update = false
   config.vm.synced_folder "~", "/vagrant_data"
-  
+
   config.vm.provision "shell", inline: <<-SHELL
-    yum install java-1.8.0-openjdk-devel git -y
+    yum install epel-release java-1.8.0-openjdk-devel git net-tools nload -y
   SHELL
 end
