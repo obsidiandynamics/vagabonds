@@ -1,0 +1,59 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "centos/7"
+  config.vm.box_version = ">=1804.02"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.name = "java10-centos7"
+    vb.memory = 768
+    vb.cpus = 1
+  end
+
+  config.ssh.insert_key = false
+  config.vm.box_check_update = false
+  config.vm.synced_folder "~", "/vagrant_data"
+  if Vagrant.has_plugin?("vagrant-timezone")
+    config.timezone.value = :host
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    cat > /etc/yum.conf <<'_EOF'
+[main]
+cachedir=/vagrant_data/tmp/yum/$basearch/$releasever
+keepcache=1
+debuglevel=2
+logfile=/var/log/yum.log
+exactarch=1
+obsoletes=1
+gpgcheck=1
+plugins=1
+installonly_limit=5
+bugtracker_url=http://bugs.centos.org/set_project.php?project_id=23&ref=http://bugs.centos.org/bug_report_page.php?category=yum
+distroverpkg=centos-release
+_EOF
+
+    yum install epel-release git net-tools nload psmisc wget kernel-devel -y
+    wget https://download.java.net/java/GA/jdk10/10.0.1/fb4372174a714e6b8c52526dc134031e/10/openjdk-10.0.1_linux-x64_bin.tar.gz
+    mkdir -p /usr/lib/jvm
+    tar zxf openjdk-10.0.1_linux-x64_bin.tar.gz -C /usr/lib/jvm
+    alternatives --install /usr/bin/java java /usr/lib/jvm/jdk-10.0.1/bin/java 1
+    alternatives --install /usr/bin/jar jar /usr/lib/jvm/jdk-10.0.1/bin/jar 1
+    alternatives --install /usr/bin/javac javac /usr/lib/jvm/jdk-10.0.1/bin/javac 1
+    alternatives --install /usr/bin/jps jps /usr/lib/jvm/jdk-10.0.1/bin/jps 1
+    alternatives --set java /usr/lib/jvm/jdk-10.0.1/bin/java
+    alternatives --set jar /usr/lib/jvm/jdk-10.0.1/bin/jar
+    alternatives --set javac /usr/lib/jvm/jdk-10.0.1/bin/javac
+    alternatives --set jps /usr/lib/jvm/jdk-10.0.1/bin/jps
+    groupadd docker
+    usermod -aG docker vagrant 
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    yum install docker-ce -y
+    systemctl enable docker
+    systemctl start docker
+    curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+  SHELL
+end
